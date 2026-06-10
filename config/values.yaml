@@ -1,0 +1,41 @@
+executor: "CeleryExecutor"
+
+allowPodLaunching: true
+
+rbac:
+  create: true
+
+redis:
+  enabled: true
+
+apiServer:
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1536Mi
+      cpu: 1000m
+
+cleanup:
+  enabled: true
+
+dags:
+  mountPath: /opt/airflow/dags
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: standard
+    accessMode: ReadWriteOnce
+
+config:
+  dag_processor:
+    refresh_interval: "30"
+    min_file_process_interval: "30"
+
+env:
+  - name: _PIP_ADDITIONAL_REQUIREMENTS
+    value: "dag-factory>=1.0.1 apache-airflow-providers-cncf-kubernetes"
+
+workers:
+  replicas: 1
