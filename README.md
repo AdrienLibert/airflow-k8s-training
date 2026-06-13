@@ -6,16 +6,13 @@
 # 1. Build the Airflow platform image
 ./config/build-image.sh
 
-# 2. Load it into the cluster
-kind load docker-image local/airflow:3.2.2-dagfactory
-
-# 3. Install Airflow via Helm
+# 2. Install Airflow via Helm
 ./config/deploy-platform.sh
 
-# 4. Build task images and import them into worker nodes
+# 3. Build task images and import them into worker nodes
 ./dags/load-image.sh
 
-# 5. Copy DAG YAML + loader into the dag-processor pod
+# 4. Copy DAG YAML + loader into the dag-processor pod
 ./config/deploy-dags.sh
 ```
 
