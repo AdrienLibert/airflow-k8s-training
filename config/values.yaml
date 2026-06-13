@@ -1,3 +1,9 @@
+images:
+  airflow:
+    repository: local/airflow
+    tag: "3.2.2-dagfactory"
+    pullPolicy: IfNotPresent
+
 executor: "CeleryExecutor"
 
 allowPodLaunching: true
@@ -32,10 +38,6 @@ config:
   dag_processor:
     refresh_interval: "30"
     min_file_process_interval: "30"
-
-env:
-  - name: _PIP_ADDITIONAL_REQUIREMENTS
-    value: "dag-factory>=1.0.1 apache-airflow-providers-cncf-kubernetes"
 
 workers:
   replicas: 1

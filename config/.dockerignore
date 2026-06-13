@@ -1,0 +1,5 @@
+.git
+.gitignore
+values.yaml
+deploy-*.sh
+build-image.sh
