@@ -2,7 +2,7 @@ images:
   airflow:
     repository: local/airflow
     tag: "3.2.2-dagfactory"
-    pullPolicy: IfNotPresent
+    pullPolicy: Never
 
 executor: "CeleryExecutor"
 

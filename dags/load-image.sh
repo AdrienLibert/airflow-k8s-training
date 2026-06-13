@@ -1,10 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VERSIONS="$SCRIPT_DIR/dags/definitions/versions"
 
 [[ -f "$VERSIONS" ]] || { echo "ERROR: missing $VERSIONS" >&2; exit 1; }
 
-mapfile -t WORKERS < <(docker ps --format '{{.Names}}' | grep -E 'worker' || true)
-[[ ${#WORKERS[@]} -gt 0 ]] || { echo "ERROR: no k8s worker containers found" >&2; exit 1; }
+mapfile -t WORKERS < <(
+  docker ps --format '{{.Names}}' | grep -E '^(desktop-(worker|control-plane)|kind-(worker|control-plane))' || true
+)
+[[ ${#WORKERS[@]} -gt 0 ]] || { echo "ERROR: no local k8s nodes found" >&2; exit 1; }
 
 declare -A BUILT
 while IFS= read -r line || [[ -n "$line" ]]; do
