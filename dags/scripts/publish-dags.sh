@@ -7,9 +7,9 @@ REPO_ROOT="$(cd "$DAGS_ROOT/.." && pwd)"
 NAMESPACE="${NAMESPACE:-airflow}"
 
 GENERATED="$DAGS_ROOT/dags/generated"
-VERSIONS="$DAGS_ROOT/dags/definitions/versions"
+IMAGES="$DAGS_ROOT/dags/definitions/images"
 
-[[ -f "$VERSIONS" ]] || { echo "ERROR: missing $VERSIONS" >&2; exit 1; }
+[[ -f "$IMAGES" ]] || { echo "ERROR: missing $IMAGES" >&2; exit 1; }
 
 PYTHON="$REPO_ROOT/.venv/bin/python"
 if [[ ! -x "$PYTHON" ]]; then
