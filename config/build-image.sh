@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REGISTRY="${REGISTRY:-local}"
-TAG="${TAG:-3.2.2-dagfactory}"
+TAG="${TAG:-3.2.2}"
 IMAGE="${REGISTRY}/airflow:${TAG}"
 
 docker build -t "$IMAGE" "$SCRIPT_DIR"

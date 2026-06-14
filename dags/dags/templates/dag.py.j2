@@ -1,0 +1,43 @@
+from datetime import datetime
+
+from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+from airflow.sdk import dag
+
+
+@dag(
+    dag_id="{{ dag_id }}",
+    start_date=datetime({{ start_date.year }}, {{ start_date.month }}, {{ start_date.day }}),
+    schedule={{ schedule | tojson }},
+    catchup={{ catchup }},
+    tags={{ tags | tojson }},
+)
+def {{ dag_id }}():
+{%- for task in tasks %}
+    {{ task.task_id }} = KubernetesPodOperator(
+        task_id="{{ task.task_id }}",
+        namespace="{{ task.namespace }}",
+        image="{{ task.image }}",
+        image_pull_policy="{{ task.image_pull_policy }}",
+        cmds={{ task.cmds | tojson }},
+{%- if task.arguments is defined %}
+        arguments=[
+{%- for arg in task.arguments %}
+            "{{ arg }}"{% if not loop.last %},{% endif %}
+{%- endfor %}
+        ],
+{%- endif %}
+        get_logs={{ task.get_logs }},
+        is_delete_operator_pod={{ task.is_delete_operator_pod }},
+{%- if task.do_xcom_push is defined %}
+        do_xcom_push={{ task.do_xcom_push }},
+{%- endif %}
+        in_cluster={{ task.in_cluster }},
+    )
+{%- endfor %}
+{%- for task in tasks if task.dependencies is defined %}
+
+    [{{ task.dependencies | join(", ") }}] >> {{ task.task_id }}
+{%- endfor %}
+
+
+{{ dag_id }}()

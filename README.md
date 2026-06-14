@@ -3,6 +3,9 @@
 ## First-time setup
 
 ```bash
+# 0. Generator deps (once, on your machine)
+pip install -r scripts/requirements.txt
+
 # 1. Build the Airflow platform image
 ./config/build-image.sh
 
@@ -12,8 +15,8 @@
 # 3. Build task images and import them into worker nodes
 ./dags/load-image.sh
 
-# 4. Copy DAG YAML + loader into the dag-processor pod
-./config/deploy-dags.sh
+# 4. Generate Python DAGs from YAML and publish to the volume
+./scripts/publish-dags.sh
 ```
 
 ## Runtime
@@ -44,6 +47,12 @@ sequenceDiagram
 # 2. Build + load new task image into worker nodes
 ./dags/load-image.sh
 
-# 3. Redeploy DAG YAML (substitutes new {{ version }})
-./config/deploy-dags.sh
+# 3. Regenerate + publish DAGs
+./scripts/publish-dags.sh
 ```
+
+## DAG authoring
+
+- Edit YAML in `dags/dags/definitions/*.yaml`
+- Pin task image versions in `dags/dags/definitions/versions`
+- `scripts/publish-dags.sh` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod
