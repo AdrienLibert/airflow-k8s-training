@@ -1,35 +1,51 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+usage() {
+  echo "Usage: $0 <patch|minor|major> [--publish]" >&2
+  exit 1
+}
+
+[[ $# -ge 1 ]] || usage
+BUMP="${1}"
+case "$BUMP" in
+  patch | minor | major) ;;
+  *) usage ;;
+esac
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-IMAGES="$SCRIPT_DIR/dags/definitions/images"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REGISTRY="${REGISTRY:-localhost:5000}"
+K8S_REGISTRY="${K8S_REGISTRY:-host.docker.internal:5000}"
+IMAGE_NAME="${IMAGE_NAME:-hello-world-tasks}"
 
-[[ -f "$IMAGES" ]] || { echo "ERROR: missing $IMAGES" >&2; exit 1; }
+if ! docker ps --format '{{.Names}}' | grep -qx "${REGISTRY_NAME:-local-registry}"; then
+  echo "ERROR: local registry is not running. Start it first:" >&2
+  echo "  ./config/start-registry.sh" >&2
+  exit 1
+fi
 
-mapfile -t WORKERS < <(
-  docker ps --format '{{.Names}}' | grep -E '^(desktop-(worker|control-plane)|kind-(worker|control-plane))' || true
-)
-[[ ${#WORKERS[@]} -gt 0 ]] || { echo "ERROR: no local k8s nodes found" >&2; exit 1; }
+PYTHON="$REPO_ROOT/.venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+  PYTHON=python3
+fi
 
-declare -A BUILT
-while IFS= read -r line || [[ -n "$line" ]]; do
-  [[ "$line" =~ ^[[:space:]]*# ]] && continue
-  [[ -z "${line// /}" ]] && continue
-  [[ "$line" == *"="* ]] || continue
+TAG="$("$PYTHON" "$SCRIPT_DIR/scripts/bump_semver.py" "$BUMP" --registry "$REGISTRY" --image-name "$IMAGE_NAME")"
+LOCAL_IMAGE="${REGISTRY}/${IMAGE_NAME}:${TAG}"
 
-  dag="${line%%=*}"
-  tag="${line#*=}"
-  dag="$(echo "$dag" | tr -d ' \n\r')"
-  tag="$(echo "$tag" | tr -d ' \n\r')"
+echo "Building ${LOCAL_IMAGE}..."
+docker build -t "$LOCAL_IMAGE" "$SCRIPT_DIR"
 
-  [[ "$tag" != "latest" ]] || { echo "ERROR: latest not allowed for $dag" >&2; exit 1; }
-  [[ -n "${BUILT[$tag]:-}" ]] && continue
+echo "Pushing ${LOCAL_IMAGE}..."
+docker push "$LOCAL_IMAGE"
 
-  image="hello-world-tasks:${tag}"
-  docker build -t "$image" "$SCRIPT_DIR"
-  for node in "${WORKERS[@]}"; do
-    docker save "$image" | docker exec -i "$node" ctr -n k8s.io images import -
-  done
-  BUILT[$tag]=1
-  echo "built and loaded $image ($dag)"
-done < "$IMAGES"
+echo ""
+echo "Built and pushed: ${LOCAL_IMAGE}"
+echo "Kubernetes image: ${K8S_REGISTRY}/${IMAGE_NAME}:${TAG}"
+echo ""
+echo "Publish with:"
+echo "  ./dags/scripts/publish-dags.sh --tag ${TAG}"
+
+if [[ "${2:-}" == "--publish" ]]; then
+  "$SCRIPT_DIR/scripts/publish-dags.sh" --tag "$TAG" --registry "$K8S_REGISTRY"
+fi

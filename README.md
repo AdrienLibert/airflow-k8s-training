@@ -9,18 +9,47 @@ sudo apt install python3-venv   # once, if `python3 -m venv` fails
 python3 -m venv .venv
 .venv/bin/pip install -r dags/scripts/requirements.txt
 
-# 1. Build the Airflow platform image
+# 1. Start local Docker registry
+./config/start-registry.sh
+
+# 2. Allow the cluster to pull from the local registry (Docker Desktop)
+#    Settings → Docker Engine → add to "insecure-registries":
+#    "host.docker.internal:5000", "localhost:5000"
+
+# 3. Build the Airflow platform image
 ./config/build-image.sh
 
-# 2. Install Airflow via Helm
+# 4. Install Airflow via Helm
 ./config/deploy-platform.sh
 
-# 3. Build task images and import them into worker nodes
-./dags/load-image.sh
-
-# 4. Generate Python DAGs from YAML and publish to the volume
-./dags/scripts/publish-dags.sh
+# 5. Build + push task image (first release → 0.0.1), then publish DAGs
+./dags/load-image.sh patch --publish
 ```
+
+## Image versioning
+
+Task image tags are **not stored in the repo**. The local registry is the source of truth.
+
+```bash
+./dags/load-image.sh patch              # 0.0.1 → 0.0.2
+./dags/load-image.sh minor              # 0.0.2 → 0.1.0
+./dags/load-image.sh major              # 0.1.0 → 1.0.0
+./dags/load-image.sh patch --publish    # build, push, and publish DAGs in one step
+```
+
+Publish an existing tag without rebuilding:
+
+```bash
+./dags/scripts/publish-dags.sh --tag 0.0.1
+```
+
+Environment overrides:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `REGISTRY` | `localhost:5000` | Where `docker push` goes |
+| `K8S_REGISTRY` | `host.docker.internal:5000` | Image host Kubernetes pulls from |
+| `IMAGE_NAME` | `hello-world-tasks` | Repository name |
 
 ## Runtime
 
@@ -35,7 +64,7 @@ sequenceDiagram
     UI->>Sched: trigger DAG
     Sched->>Worker: queue tasks
     Worker->>KPO: run get_hello / get_world
-    KPO->>Pod: start pod with hello-world-tasks:0.1.0
+    KPO->>Pod: pull host.docker.internal:5000/hello-world-tasks:0.0.1
     Pod-->>KPO: stdout → XCom
     KPO->>Pod: start print_message (with XCom args)
     Pod-->>KPO: "Hello World!"
@@ -44,18 +73,14 @@ sequenceDiagram
 ## Redeploy task code
 
 ```bash
-# 1. Edit dags/dags/definitions/images
-#    hello_world_k8s_dag = 0.1.1
+# 1. Edit dags/tasks/*.py
 
-# 2. Build + load new task image into worker nodes
-./dags/load-image.sh
-
-# 3. Regenerate + publish DAGs
-./dags/scripts/publish-dags.sh
+# 2. Bump semver, push to registry, publish DAGs
+./dags/load-image.sh patch --publish
 ```
 
 ## DAG authoring
 
 - Edit YAML in `dags/dags/definitions/*.yaml`
-- Pin task image tags in `dags/dags/definitions/images`
-- `dags/scripts/publish-dags.sh` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod
+- `dags/scripts/publish-dags.sh --tag <semver>` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod
+- The image tag is passed at publish time — it is not committed to the repo

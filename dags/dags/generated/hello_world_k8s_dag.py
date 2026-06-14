@@ -15,8 +15,8 @@ def hello_world_k8s_dag():
     get_hello = KubernetesPodOperator(
         task_id="get_hello",
         namespace="airflow",
-        image="hello-world-tasks:0.1.0",
-        image_pull_policy="Never",
+        image="host.docker.internal:5000/hello-world-tasks:0.0.1",
+        image_pull_policy="IfNotPresent",
         cmds=["python", "-m", "tasks.get_hello"],
         get_logs=True,
         is_delete_operator_pod=True,
@@ -26,8 +26,8 @@ def hello_world_k8s_dag():
     get_world = KubernetesPodOperator(
         task_id="get_world",
         namespace="airflow",
-        image="hello-world-tasks:0.1.0",
-        image_pull_policy="Never",
+        image="host.docker.internal:5000/hello-world-tasks:0.0.1",
+        image_pull_policy="IfNotPresent",
         cmds=["python", "-m", "tasks.get_world"],
         get_logs=True,
         is_delete_operator_pod=True,
@@ -37,8 +37,8 @@ def hello_world_k8s_dag():
     print_message = KubernetesPodOperator(
         task_id="print_message",
         namespace="airflow",
-        image="hello-world-tasks:0.1.0",
-        image_pull_policy="Never",
+        image="host.docker.internal:5000/hello-world-tasks:0.0.1",
+        image_pull_policy="IfNotPresent",
         cmds=["python", "-m", "tasks.print_message"],
         arguments=[
             "{{ ti.xcom_pull(task_ids='get_hello') }}",
