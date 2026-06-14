@@ -4,7 +4,10 @@
 
 ```bash
 # 0. Generator deps (once, on your machine)
-pip install -r scripts/requirements.txt
+# Debian/Ubuntu blocks system-wide pip (PEP 668); use a venv:
+sudo apt install python3-venv   # once, if `python3 -m venv` fails
+python3 -m venv .venv
+.venv/bin/pip install -r dags/scripts/requirements.txt
 
 # 1. Build the Airflow platform image
 ./config/build-image.sh
@@ -16,7 +19,7 @@ pip install -r scripts/requirements.txt
 ./dags/load-image.sh
 
 # 4. Generate Python DAGs from YAML and publish to the volume
-./scripts/publish-dags.sh
+./dags/scripts/publish-dags.sh
 ```
 
 ## Runtime
@@ -48,11 +51,11 @@ sequenceDiagram
 ./dags/load-image.sh
 
 # 3. Regenerate + publish DAGs
-./scripts/publish-dags.sh
+./dags/scripts/publish-dags.sh
 ```
 
 ## DAG authoring
 
 - Edit YAML in `dags/dags/definitions/*.yaml`
 - Pin task image versions in `dags/dags/definitions/versions`
-- `scripts/publish-dags.sh` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod
+- `dags/scripts/publish-dags.sh` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod

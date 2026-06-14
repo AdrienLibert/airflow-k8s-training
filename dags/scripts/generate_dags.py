@@ -9,11 +9,12 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFS = REPO_ROOT / "dags" / "dags" / "definitions"
+DAGS_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = DAGS_ROOT.parent
+DEFS = DAGS_ROOT / "dags" / "definitions"
 VERSIONS = DEFS / "versions"
-TEMPLATE_DIR = REPO_ROOT / "dags" / "dags" / "templates"
-OUTPUT_DIR = REPO_ROOT / "dags" / "dags" / "generated"
+TEMPLATE_DIR = DAGS_ROOT / "dags" / "templates"
+OUTPUT_DIR = DAGS_ROOT / "dags" / "generated"
 VERSION_PLACEHOLDER = re.compile(r"\{\{\s*version\s*\}\}")
 
 

@@ -2,15 +2,21 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DAGS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$DAGS_ROOT/.." && pwd)"
 NAMESPACE="${NAMESPACE:-airflow}"
 
-GENERATED="$REPO_ROOT/dags/dags/generated"
-VERSIONS="$REPO_ROOT/dags/dags/definitions/versions"
+GENERATED="$DAGS_ROOT/dags/generated"
+VERSIONS="$DAGS_ROOT/dags/definitions/versions"
 
 [[ -f "$VERSIONS" ]] || { echo "ERROR: missing $VERSIONS" >&2; exit 1; }
 
-python3 "$SCRIPT_DIR/generate_dags.py"
+PYTHON="$REPO_ROOT/.venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+  PYTHON=python3
+fi
+
+"$PYTHON" "$SCRIPT_DIR/generate_dags.py"
 
 shopt -s nullglob
 py_files=("$GENERATED"/*.py)
