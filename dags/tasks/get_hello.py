@@ -1,6 +1,4 @@
-def main() -> None:
-    print("Hello")
-
+from lib.hello import run
 
 if __name__ == "__main__":
-    main()
+    run()

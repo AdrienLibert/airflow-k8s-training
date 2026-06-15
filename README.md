@@ -1,5 +1,7 @@
 # Airflow on Kubernetes (local)
 
+Requires **Docker Desktop Kubernetes**. Task images are built on the host and read from the Docker Desktop image store — no separate registry container.
+
 ## First-time setup
 
 ```bash
@@ -9,32 +11,25 @@ sudo apt install python3-venv   # once, if `python3 -m venv` fails
 python3 -m venv .venv
 .venv/bin/pip install -r dags/scripts/requirements.txt
 
-# 1. Start local Docker registry
-./config/start-registry.sh
-
-# 2. Allow the cluster to pull from the local registry (Docker Desktop)
-#    Settings → Docker Engine → add to "insecure-registries":
-#    "host.docker.internal:5000", "localhost:5000"
-
-# 3. Build the Airflow platform image
+# 1. Build the Airflow platform image
 ./config/build-image.sh
 
-# 4. Install Airflow via Helm
+# 2. Install Airflow via Helm
 ./config/deploy-platform.sh
 
-# 5. Build + push task image (first release → 0.0.1), then publish DAGs
-./dags/load-image.sh patch --publish
+# 3. Build task image (first release → 0.0.1), then publish DAGs
+./dags/push-task-image.sh patch --publish
 ```
 
 ## Image versioning
 
-Task image tags are **not stored in the repo**. The local registry is the source of truth.
+Task image tags are **not stored in the repo**. Docker Desktop's image store is the source of truth (`docker images hello-world-tasks`).
 
 ```bash
-./dags/load-image.sh patch              # 0.0.1 → 0.0.2
-./dags/load-image.sh minor              # 0.0.2 → 0.1.0
-./dags/load-image.sh major              # 0.1.0 → 1.0.0
-./dags/load-image.sh patch --publish    # build, push, and publish DAGs in one step
+./dags/push-task-image.sh patch              # 0.0.1 → 0.0.2
+./dags/push-task-image.sh minor              # 0.0.2 → 0.1.0
+./dags/push-task-image.sh major              # 0.1.0 → 1.0.0
+./dags/push-task-image.sh patch --publish    # build and publish DAGs in one step
 ```
 
 Publish an existing tag without rebuilding:
@@ -43,13 +38,9 @@ Publish an existing tag without rebuilding:
 ./dags/scripts/publish-dags.sh --tag 0.0.1
 ```
 
-Environment overrides:
-
 | Variable | Default | Purpose |
 |---|---|---|
-| `REGISTRY` | `localhost:5000` | Where `docker push` goes |
-| `K8S_REGISTRY` | `host.docker.internal:5000` | Image host Kubernetes pulls from |
-| `IMAGE_NAME` | `hello-world-tasks` | Repository name |
+| `IMAGE_NAME` | `hello-world-tasks` | Local Docker image name |
 
 ## Runtime
 
@@ -64,7 +55,7 @@ sequenceDiagram
     UI->>Sched: trigger DAG
     Sched->>Worker: queue tasks
     Worker->>KPO: run get_hello / get_world
-    KPO->>Pod: pull host.docker.internal:5000/hello-world-tasks:0.0.1
+    KPO->>Pod: start pod with hello-world-tasks:0.0.1
     Pod-->>KPO: stdout → XCom
     KPO->>Pod: start print_message (with XCom args)
     Pod-->>KPO: "Hello World!"
@@ -75,12 +66,22 @@ sequenceDiagram
 ```bash
 # 1. Edit dags/tasks/*.py
 
-# 2. Bump semver, push to registry, publish DAGs
-./dags/load-image.sh patch --publish
+# 2. Bump semver, build image, publish DAGs
+./dags/push-task-image.sh patch --publish
+```
+
+## Task layout
+
+- `dags/lib/` — shared task logic
+- `dags/tasks/` — thin entrypoints run via `python -m tasks.<name>` in KubernetesPodOperator
+- `dags/scripts/test_task_imports.py` — checks that one entrypoint does not run the others
+
+```bash
+python3 dags/scripts/test_task_imports.py
 ```
 
 ## DAG authoring
 
-- Edit YAML in `dags/dags/definitions/*.yaml`
-- `dags/scripts/publish-dags.sh --tag <semver>` renders `dags/dags/templates/dag.py.j2` into `dags/dags/generated/*.py`, then copies those files to `/opt/airflow/dags/` on the dag-processor pod
+- Edit YAML in `dags/definitions/*.yaml`
+- `dags/scripts/publish-dags.sh --tag <semver>` generates DAG Python in a temp dir at deploy time and copies it to `/opt/airflow/dags/` on the dag-processor pod
 - The image tag is passed at publish time — it is not committed to the repo

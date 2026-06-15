@@ -12,7 +12,7 @@ hello_world_k8s_dag:
       operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
       namespace: airflow
       image: "{{ image }}"
-      image_pull_policy: IfNotPresent
+      image_pull_policy: Never
       cmds: ["python", "-m", "tasks.get_hello"]
       get_logs: true
       is_delete_operator_pod: true
@@ -23,7 +23,7 @@ hello_world_k8s_dag:
       operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
       namespace: airflow
       image: "{{ image }}"
-      image_pull_policy: IfNotPresent
+      image_pull_policy: Never
       cmds: ["python", "-m", "tasks.get_world"]
       get_logs: true
       is_delete_operator_pod: true
@@ -34,7 +34,7 @@ hello_world_k8s_dag:
       operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
       namespace: airflow
       image: "{{ image }}"
-      image_pull_policy: IfNotPresent
+      image_pull_policy: Never
       cmds: ["python", "-m", "tasks.print_message"]
       arguments:
         - "{{ ti.xcom_pull(task_ids='get_hello') }}"

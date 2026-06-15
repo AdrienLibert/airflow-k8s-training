@@ -11,10 +11,8 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 DAGS_ROOT = Path(__file__).resolve().parent.parent
-REPO_ROOT = DAGS_ROOT.parent
-DEFS = DAGS_ROOT / "dags" / "definitions"
-TEMPLATE_DIR = DAGS_ROOT / "dags" / "templates"
-OUTPUT_DIR = DAGS_ROOT / "dags" / "generated"
+DEFS = DAGS_ROOT / "definitions"
+TEMPLATE_DIR = DAGS_ROOT / "templates"
 IMAGE_PLACEHOLDER = re.compile(r"\{\{\s*image\s*\}\}")
 
 
@@ -63,11 +61,11 @@ def render_dag(yaml_path: Path, image: str, env: Environment) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Airflow DAG Python files from YAML")
     parser.add_argument("--tag", required=True, help="Task image semver tag")
-    parser.add_argument("--registry", default="host.docker.internal:5000")
+    parser.add_argument("--output-dir", required=True, type=Path, help="Temp output directory")
     parser.add_argument("--image-name", default="hello-world-tasks")
     parser.add_argument(
         "--image",
-        help="Full task image reference (overrides --registry, --image-name, and --tag)",
+        help="Full task image reference (overrides --image-name and --tag)",
     )
     return parser.parse_args()
 
@@ -75,12 +73,14 @@ def parse_args() -> argparse.Namespace:
 def resolve_image(args: argparse.Namespace) -> str:
     if args.image:
         return args.image
-    return f"{args.registry}/{args.image_name}:{args.tag}"
+    return f"{args.image_name}:{args.tag}"
 
 
 def main() -> int:
     args = parse_args()
     image = resolve_image(args)
+    output_dir = args.output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     yaml_files = sorted(DEFS.glob("*.yaml"))
     if not yaml_files:
@@ -93,15 +93,11 @@ def main() -> int:
         keep_trailing_newline=True,
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    for stale in OUTPUT_DIR.glob("*.py"):
-        stale.unlink()
-
     for yaml_path in yaml_files:
         dag_id = yaml_path.stem
-        output = OUTPUT_DIR / f"{dag_id}.py"
+        output = output_dir / f"{dag_id}.py"
         output.write_text(render_dag(yaml_path, image, env))
-        print(f"generated {output.relative_to(REPO_ROOT)} ({image})")
+        print(f"generated {output.name} ({image})")
 
     return 0
 

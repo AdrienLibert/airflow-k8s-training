@@ -1,6 +1,4 @@
-def main() -> None:
-    print("World")
-
+from lib.world import run
 
 if __name__ == "__main__":
-    main()
+    run()

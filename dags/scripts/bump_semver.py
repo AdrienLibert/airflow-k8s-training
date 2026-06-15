@@ -2,26 +2,24 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
-import sys
-import urllib.error
-import urllib.request
+import subprocess
 
 SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 
-def list_tags(registry: str, repository: str) -> list[str]:
-    url = f"http://{registry}/v2/{repository}/tags/list"
-    try:
-        with urllib.request.urlopen(url, timeout=5) as response:
-            payload = json.load(response)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            return []
-        raise
-    tags = payload.get("tags")
-    return tags if tags else []
+def list_tags(image_name: str) -> list[str]:
+    result = subprocess.run(
+        ["docker", "images", image_name, "--format", "{{.Tag}}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [
+        tag
+        for tag in (line.strip() for line in result.stdout.splitlines())
+        if tag and tag != "<none>"
+    ]
 
 
 def parse_semver(tag: str) -> tuple[int, int, int] | None:
@@ -52,17 +50,13 @@ def format_semver(version: tuple[int, int, int]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compute next semver from registry tags")
+    parser = argparse.ArgumentParser(description="Compute next semver from Docker image tags")
     parser.add_argument("level", choices=["patch", "minor", "major"])
-    parser.add_argument("--registry", default="localhost:5000")
     parser.add_argument("--image-name", default="hello-world-tasks")
     args = parser.parse_args()
 
-    tags = list_tags(args.registry, args.image_name)
-    current = latest_semver(tags)
-    if current == (0, 0, 0) and not tags:
-        current = (0, 0, 0)
-    next_tag = format_semver(bump(current, args.level))
+    tags = list_tags(args.image_name)
+    next_tag = format_semver(bump(latest_semver(tags), args.level))
     print(next_tag)
     return 0
 

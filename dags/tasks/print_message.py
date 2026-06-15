@@ -1,10 +1,6 @@
 import sys
 
-
-def main() -> None:
-    hello, world = sys.argv[1], sys.argv[2]
-    print(f"{hello} {world}!")
-
+from lib.message import run
 
 if __name__ == "__main__":
-    main()
+    run(sys.argv[1], sys.argv[2])
