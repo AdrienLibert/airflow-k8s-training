@@ -62,7 +62,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Airflow DAG Python files from YAML")
     parser.add_argument("--tag", required=True, help="Task image semver tag")
     parser.add_argument("--output-dir", required=True, type=Path, help="Temp output directory")
-    parser.add_argument("--image-name", default="hello-world-tasks")
+    parser.add_argument("--image-name", required=True)
     parser.add_argument(
         "--image",
         help="Full task image reference (overrides --image-name and --tag)",

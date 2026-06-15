@@ -37,11 +37,6 @@ Publish an existing tag without rebuilding:
 ```bash
 ./dags/scripts/publish-dags.sh --tag 0.0.1
 ```
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `IMAGE_NAME` | `hello-world-tasks` | Local Docker image name |
-
 ## Runtime
 
 ```mermaid

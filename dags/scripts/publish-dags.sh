@@ -2,12 +2,12 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --tag <semver> [--image-name hello-world-tasks]" >&2
+  echo "Usage: $0 --tag <semver> --image-name <name>" >&2
   exit 1
 }
 
 TAG=""
-IMAGE_NAME="${IMAGE_NAME:-hello-world-tasks}"
+IMAGE_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$TAG" ]] || usage
+[[ -n "$TAG" && -n "$IMAGE_NAME" ]] || usage
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DAGS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

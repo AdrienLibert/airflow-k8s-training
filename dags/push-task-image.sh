@@ -32,8 +32,8 @@ echo ""
 echo "Built ${IMAGE} (Docker Desktop image store)"
 echo ""
 echo "Publish with:"
-echo "  ./dags/scripts/publish-dags.sh --tag ${TAG}"
+echo "  ./dags/scripts/publish-dags.sh --tag ${TAG} --image-name ${IMAGE_NAME}"
 
 if [[ "${2:-}" == "--publish" ]]; then
-  "$SCRIPT_DIR/scripts/publish-dags.sh" --tag "$TAG"
+  "$SCRIPT_DIR/scripts/publish-dags.sh" --tag "$TAG" --image-name "$IMAGE_NAME"
 fi
