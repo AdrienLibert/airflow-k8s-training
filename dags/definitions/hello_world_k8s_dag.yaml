@@ -13,7 +13,7 @@ hello_world_k8s_dag:
       namespace: airflow
       image: "{{ image }}"
       image_pull_policy: Never
-      cmds: ["python", "-m", "tasks.get_hello"]
+      cmds: ["python", "entrypoint.py", "get_hello"]
       get_logs: true
       is_delete_operator_pod: true
       do_xcom_push: true
@@ -24,7 +24,7 @@ hello_world_k8s_dag:
       namespace: airflow
       image: "{{ image }}"
       image_pull_policy: Never
-      cmds: ["python", "-m", "tasks.get_world"]
+      cmds: ["python", "entrypoint.py", "get_world"]
       get_logs: true
       is_delete_operator_pod: true
       do_xcom_push: true
@@ -35,7 +35,7 @@ hello_world_k8s_dag:
       namespace: airflow
       image: "{{ image }}"
       image_pull_policy: Never
-      cmds: ["python", "-m", "tasks.print_message"]
+      cmds: ["python", "entrypoint.py", "print_message"]
       arguments:
         - "{{ ti.xcom_pull(task_ids='get_hello') }}"
         - "{{ ti.xcom_pull(task_ids='get_world') }}"

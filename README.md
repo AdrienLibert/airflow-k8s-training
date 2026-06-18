@@ -59,7 +59,7 @@ sequenceDiagram
 ## Redeploy task code
 
 ```bash
-# 1. Edit dags/tasks/*.py
+# 1. Edit dags/tasks/task_*.py or dags/lib/*.py
 
 # 2. Bump semver, build image, publish DAGs
 ./dags/push-task-image.sh patch --publish
@@ -68,8 +68,9 @@ sequenceDiagram
 ## Task layout
 
 - `dags/lib/` — shared task logic
-- `dags/tasks/` — thin entrypoints run via `python -m tasks.<name>` in KubernetesPodOperator
-- `dags/scripts/test_task_imports.py` — checks that one entrypoint does not run the others
+- `dags/tasks/task_<name>.py` — one file per task, loaded lazily by `entrypoint.py`
+- `dags/entrypoint.py` — `python entrypoint.py <task_name> [args...]` in KubernetesPodOperator
+- `dags/scripts/test_task_imports.py` — checks that loading one task does not run the others
 
 ```bash
 python3 dags/scripts/test_task_imports.py
