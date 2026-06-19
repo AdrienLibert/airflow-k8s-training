@@ -8,20 +8,6 @@ hello_world_k8s_dag_2:
     - k8s
 
   tasks:
-    - task_id: debug_context
-      operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
-      namespace: airflow
-      image: "{{ image }}"
-      image_pull_policy: Never
-      cmds: ["python", "entrypoint.py", "debug_context"]
-      arguments:
-        - "dummy-arg-1"
-        - "dummy-arg-2"
-      get_logs: true
-      is_delete_operator_pod: true
-      do_xcom_push: false
-      in_cluster: true
-
     - task_id: get_hello
       operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
       namespace: airflow
