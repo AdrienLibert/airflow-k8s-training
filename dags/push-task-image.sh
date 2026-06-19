@@ -28,6 +28,19 @@ IMAGE="${IMAGE_NAME}:${TAG}"
 echo "Building ${IMAGE}..."
 docker build -t "$IMAGE" "$SCRIPT_DIR"
 
+# Docker Desktop: cluster nodes don't see host docker images — import into each node.
+mapfile -t NODES < <(
+  docker ps --format '{{.Names}}' | grep -E '^(desktop-(worker|control-plane)|kind-(worker|control-plane))' || true
+)
+if [[ ${#NODES[@]} -eq 0 ]]; then
+  echo "No local k8s nodes found — skipping image import (OK on single-node Docker Desktop)"
+else
+  for node in "${NODES[@]}"; do
+    echo "Loading ${IMAGE} into ${node}..."
+    docker save "$IMAGE" | docker exec -i "$node" ctr -n k8s.io images import -
+  done
+fi
+
 echo ""
 echo "Built ${IMAGE} (Docker Desktop image store)"
 echo ""
