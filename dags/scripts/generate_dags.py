@@ -10,8 +10,9 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-CONVERTER_ROOT = Path(__file__).resolve().parent
-TEMPLATE_DIR = CONVERTER_ROOT / "templates"
+DAGS_ROOT = Path(__file__).resolve().parent.parent
+DEFS = DAGS_ROOT / "definitions"
+TEMPLATE_DIR = DAGS_ROOT / "templates"
 IMAGE_PLACEHOLDER = re.compile(r"\{\{\s*image\s*\}\}")
 
 
@@ -59,9 +60,8 @@ def render_dag(yaml_path: Path, image: str, env: Environment) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate Airflow DAG Python files from YAML")
-    parser.add_argument("--definitions", required=True, type=Path, help="YAML definitions directory")
     parser.add_argument("--tag", required=True, help="Task image semver tag")
-    parser.add_argument("--output-dir", required=True, type=Path, help="Output directory for generated DAGs")
+    parser.add_argument("--output-dir", required=True, type=Path, help="Temp output directory")
     parser.add_argument("--image-name", required=True)
     parser.add_argument(
         "--image",
@@ -78,18 +78,13 @@ def resolve_image(args: argparse.Namespace) -> str:
 
 def main() -> int:
     args = parse_args()
-    definitions = args.definitions
     image = resolve_image(args)
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if not definitions.is_dir():
-        print(f"ERROR: definitions directory not found: {definitions}", file=sys.stderr)
-        return 1
-
-    yaml_files = sorted(definitions.glob("*.yaml"))
+    yaml_files = sorted(DEFS.glob("*.yaml"))
     if not yaml_files:
-        print(f"ERROR: no YAML DAG definitions found in {definitions}", file=sys.stderr)
+        print(f"ERROR: no YAML DAG definitions found in {DEFS}", file=sys.stderr)
         return 1
 
     env = Environment(
