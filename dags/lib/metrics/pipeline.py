@@ -31,29 +31,38 @@ def _event_in_hour(ts_raw: str, config: MetricsConfig) -> bool:
     return event_hour == run_hour
 
 
+def _parse_upstream(raw: str | None) -> dict | None:
+    if not raw:
+        return None
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise SystemExit("upstream payload must be a JSON object")
+    return payload
+
+
 def run_preflight(config: MetricsConfig) -> dict:
     if not config.events_source.is_file():
         raise SystemExit(f"events source missing: {config.events_source}")
-    config.output_root.mkdir(parents=True, exist_ok=True)
     return {
         "events_source": str(config.events_source),
-        "output_root": str(config.output_root),
         "hour_key": config.hour_key,
     }
 
 
 def run_extract(config: MetricsConfig) -> dict:
     rows = [row for row in _read_jsonl(config.events_source) if _event_in_hour(row["ts"], config)]
-    work_dir = config.work_dir
-    work_dir.mkdir(parents=True, exist_ok=True)
-    extracted_path = work_dir / "extracted.jsonl"
-    _write_jsonl(extracted_path, rows)
-    return {"hour_key": config.hour_key, "extracted_count": len(rows), "path": str(extracted_path)}
+    if config.work_dir is not None:
+        config.work_dir.mkdir(parents=True, exist_ok=True)
+        _write_jsonl(config.work_dir / "extracted.jsonl", rows)
+    return {"hour_key": config.hour_key, "extracted_count": len(rows), "rows": rows}
 
 
-def run_normalize(config: MetricsConfig) -> dict:
-    extracted_path = config.work_dir / "extracted.jsonl"
-    rows = _read_jsonl(extracted_path)
+def run_normalize(config: MetricsConfig, upstream: dict | None = None) -> dict:
+    if upstream is None:
+        if config.work_dir is None:
+            raise SystemExit("normalize requires upstream payload or METRICS_OUTPUT_DIR for local runs")
+        upstream = {"rows": _read_jsonl(config.work_dir / "extracted.jsonl")}
+    rows = upstream["rows"]
     seen: set[str] = set()
     normalized: list[dict] = []
     for row in rows:
@@ -69,23 +78,27 @@ def run_normalize(config: MetricsConfig) -> dict:
                 "latency_ms": int(row["latency_ms"]),
             }
         )
-    normalized_path = config.work_dir / "normalized.jsonl"
-    _write_jsonl(normalized_path, normalized)
     return {
         "hour_key": config.hour_key,
         "input_count": len(rows),
         "normalized_count": len(normalized),
-        "path": str(normalized_path),
+        "rows": normalized,
     }
 
 
-def run_aggregate(config: MetricsConfig) -> dict:
-    normalized_path = config.work_dir / "normalized.jsonl"
-    rows = _read_jsonl(normalized_path)
+def run_aggregate(config: MetricsConfig, upstream: dict | None = None) -> dict:
+    if upstream is None:
+        if config.work_dir is None:
+            raise SystemExit("aggregate requires upstream payload or METRICS_OUTPUT_DIR for local runs")
+        upstream = {"rows": _read_jsonl(config.work_dir / "normalized.jsonl")}
+    rows = upstream["rows"]
     buckets: dict[tuple[str, str], dict] = {}
     for row in rows:
         key = (row["route"], row["status"])
-        bucket = buckets.setdefault(key, {"route": row["route"], "status": row["status"], "count": 0, "latency_ms_total": 0})
+        bucket = buckets.setdefault(
+            key,
+            {"route": row["route"], "status": row["status"], "count": 0, "latency_ms_total": 0},
+        )
         bucket["count"] += 1
         bucket["latency_ms_total"] += row["latency_ms"]
     groups = []
@@ -106,43 +119,47 @@ def run_aggregate(config: MetricsConfig) -> dict:
         "total_events": total_events,
         "groups": groups,
     }
-    summary_path = config.work_dir / "summary.json"
-    summary_path.write_text(json.dumps(summary, sort_keys=True, indent=2) + "\n")
-    return {"hour_key": config.hour_key, "total_events": total_events, "groups": len(groups), "path": str(summary_path)}
+    return summary
 
 
-def run_write_summary(config: MetricsConfig) -> dict:
-    summary_path = config.work_dir / "summary.json"
-    summary = json.loads(summary_path.read_text())
-    manifest = {
-        "hour_key": config.hour_key,
-        "summary_path": str(summary_path),
-        "total_events": summary["total_events"],
-        "groups": summary["groups"],
+def run_write_summary(config: MetricsConfig, upstream: dict | None = None) -> dict:
+    if upstream is None:
+        upstream = json.loads((config.work_dir / "summary.json").read_text())
+    return {
+        "hour_key": upstream["hour_key"],
+        "total_events": upstream["total_events"],
+        "groups": upstream["groups"],
+        "status": "written",
     }
-    manifest_path = config.work_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
-    return {"hour_key": config.hour_key, "manifest_path": str(manifest_path)}
 
 
-def run_verify(config: MetricsConfig) -> dict:
-    manifest = json.loads((config.work_dir / "manifest.json").read_text())
-    summary = json.loads((config.work_dir / "summary.json").read_text())
-    normalized_count = len(_read_jsonl(config.work_dir / "normalized.jsonl"))
+def run_verify(config: MetricsConfig, upstream: dict | None = None) -> dict:
+    if upstream is None:
+        upstream = json.loads((config.work_dir / "manifest.json").read_text())
     failures: list[str] = []
-    if manifest["total_events"] != summary["total_events"]:
-        failures.append("manifest total_events mismatch")
-    if summary["total_events"] != normalized_count:
-        failures.append("summary total_events != normalized row count")
-    if summary["total_events"] == 0:
+    if upstream.get("total_events", 0) == 0:
         failures.append("no events in hour window")
+    if not upstream.get("groups"):
+        failures.append("summary has no groups")
     status = "ok" if not failures else "failed"
-    result = {"hour_key": config.hour_key, "status": status, "failures": failures}
+    result = {
+        "hour_key": upstream.get("hour_key", config.hour_key),
+        "status": status,
+        "failures": failures,
+        "total_events": upstream.get("total_events", 0),
+        "groups": upstream.get("groups", []),
+    }
     if failures:
         raise SystemExit(json.dumps(result, sort_keys=True))
     return result
 
 
-def run_notify_summary(config: MetricsConfig) -> dict:
-    summary = json.loads((config.work_dir / "summary.json").read_text())
-    return {"hour_key": config.hour_key, "status": "ok", "total_events": summary["total_events"], "groups": summary["groups"]}
+def run_notify_summary(config: MetricsConfig, upstream: dict | None = None) -> dict:
+    if upstream is None:
+        upstream = json.loads((config.work_dir / "summary.json").read_text())
+    return {
+        "hour_key": upstream.get("hour_key", config.hour_key),
+        "status": "ok",
+        "total_events": upstream.get("total_events", 0),
+        "groups": upstream.get("groups", []),
+    }

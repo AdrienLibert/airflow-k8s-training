@@ -1,5 +1,5 @@
 from lib.metrics.config import emit_result, load_config
-from lib.metrics.pipeline import run_extract
+from lib.metrics.pipeline import run_extract, upstream_from_argv
 
 
 def run() -> None:

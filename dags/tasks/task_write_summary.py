@@ -1,6 +1,7 @@
 from lib.metrics.config import emit_result, load_config
-from lib.metrics.pipeline import run_write_summary
+from lib.metrics.pipeline import _parse_upstream, run_write_summary
 
 
-def run() -> None:
-    emit_result(run_write_summary(load_config()))
+def run(upstream_json: str = "") -> None:
+    upstream = _parse_upstream(upstream_json) if upstream_json else None
+    emit_result(run_write_summary(load_config(), upstream))

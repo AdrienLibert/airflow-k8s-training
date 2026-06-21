@@ -10,7 +10,6 @@ from pathlib import Path
 @dataclass(frozen=True)
 class MetricsConfig:
     events_source: Path
-    output_root: Path
     interval_start: datetime
 
     @property
@@ -18,8 +17,11 @@ class MetricsConfig:
         return self.interval_start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
 
     @property
-    def work_dir(self) -> Path:
-        return self.output_root / self.hour_key
+    def work_dir(self) -> Path | None:
+        raw = os.environ.get("METRICS_OUTPUT_DIR")
+        if not raw:
+            return None
+        return Path(raw) / self.hour_key
 
 
 def _parse_interval_start(raw: str) -> datetime:
@@ -32,11 +34,9 @@ def _parse_interval_start(raw: str) -> datetime:
 
 def load_config() -> MetricsConfig:
     events_source = Path(os.environ.get("EVENTS_SOURCE", "/app/fixtures/events/raw.jsonl"))
-    output_root = Path(os.environ.get("METRICS_OUTPUT_DIR", "/tmp/metrics/hourly"))
     raw_interval = os.environ.get("DATA_INTERVAL_START", "2026-06-20T14:00:00+00:00")
     return MetricsConfig(
         events_source=events_source,
-        output_root=output_root,
         interval_start=_parse_interval_start(raw_interval),
     )
 

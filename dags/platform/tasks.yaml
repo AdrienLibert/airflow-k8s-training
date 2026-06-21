@@ -13,29 +13,43 @@ tasks:
   preflight:
     env_vars: &metrics_env
       EVENTS_SOURCE: /app/fixtures/events/raw.jsonl
-      METRICS_OUTPUT_DIR: /tmp/metrics/hourly
       DATA_INTERVAL_START: "{{ data_interval_start.isoformat() }}"
 
   extract_hourly:
     env_vars:
       <<: *metrics_env
+    do_xcom_push: true
 
   normalize:
     env_vars:
       <<: *metrics_env
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='extract_hourly') }}"
+    do_xcom_push: true
 
   aggregate:
     env_vars:
       <<: *metrics_env
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='normalize') }}"
+    do_xcom_push: true
 
   write_summary:
     env_vars:
       <<: *metrics_env
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='aggregate') }}"
+    do_xcom_push: true
 
   verify:
     env_vars:
       <<: *metrics_env
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='write_summary') }}"
+    do_xcom_push: true
 
   notify_summary:
     env_vars:
       <<: *metrics_env
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='verify') }}"
