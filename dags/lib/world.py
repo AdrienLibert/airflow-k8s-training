@@ -1,2 +1,6 @@
 def run() -> None:
-    print("World")
+    from lib.xcom import push_xcom
+
+    message = "World"
+    print(message)
+    push_xcom(message)

@@ -20,11 +20,7 @@ def {{ dag_id }}():
         image_pull_policy="{{ task.image_pull_policy }}",
         cmds={{ task.cmds | tojson }},
 {%- if task.arguments is defined %}
-        arguments=[
-{%- for arg in task.arguments %}
-            "{{ arg }}"{% if not loop.last %},{% endif %}
-{%- endfor %}
-        ],
+        arguments={{ task.arguments | tojson }},
 {%- endif %}
 {%- if task.env_vars is defined %}
         env_vars={{ task.env_vars | tojson }},

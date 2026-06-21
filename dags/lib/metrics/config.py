@@ -42,4 +42,8 @@ def load_config() -> MetricsConfig:
 
 
 def emit_result(payload: dict) -> None:
-    print(json.dumps(payload, sort_keys=True))
+    from lib.xcom import push_xcom
+
+    text = json.dumps(payload, sort_keys=True)
+    print(text)
+    push_xcom(payload)

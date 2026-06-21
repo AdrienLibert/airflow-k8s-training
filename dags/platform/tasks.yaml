@@ -7,8 +7,8 @@ tasks:
 
   print_message:
     arguments:
-      - "{{ ti.xcom_pull(task_ids='get_hello') }}"
-      - "{{ ti.xcom_pull(task_ids='get_world') }}"
+      - "{{ ti.xcom_pull(task_ids='get_hello') | tojson }}"
+      - "{{ ti.xcom_pull(task_ids='get_world') | tojson }}"
 
   preflight:
     env_vars: &metrics_env
@@ -24,32 +24,32 @@ tasks:
     env_vars:
       <<: *metrics_env
     arguments:
-      - "{{ ti.xcom_pull(task_ids='extract_hourly') }}"
+      - "{{ ti.xcom_pull(task_ids='extract_hourly') | tojson }}"
     do_xcom_push: true
 
   aggregate:
     env_vars:
       <<: *metrics_env
     arguments:
-      - "{{ ti.xcom_pull(task_ids='normalize') }}"
+      - "{{ ti.xcom_pull(task_ids='normalize') | tojson }}"
     do_xcom_push: true
 
   write_summary:
     env_vars:
       <<: *metrics_env
     arguments:
-      - "{{ ti.xcom_pull(task_ids='aggregate') }}"
+      - "{{ ti.xcom_pull(task_ids='aggregate') | tojson }}"
     do_xcom_push: true
 
   verify:
     env_vars:
       <<: *metrics_env
     arguments:
-      - "{{ ti.xcom_pull(task_ids='write_summary') }}"
+      - "{{ ti.xcom_pull(task_ids='write_summary') | tojson }}"
     do_xcom_push: true
 
   notify_summary:
     env_vars:
       <<: *metrics_env
     arguments:
-      - "{{ ti.xcom_pull(task_ids='verify') }}"
+      - "{{ ti.xcom_pull(task_ids='verify') | tojson }}"

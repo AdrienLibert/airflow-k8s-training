@@ -32,8 +32,11 @@ def _event_in_hour(ts_raw: str, config: MetricsConfig) -> bool:
 
 
 def _parse_upstream(raw: str | None) -> dict | None:
-    if not raw:
-        return None
+    if not raw or raw == "None":
+        raise SystemExit(
+            "missing upstream payload: upstream task xcom is empty "
+            "(ensure do_xcom_push tasks write /airflow/xcom/return.json)"
+        )
     payload = json.loads(raw)
     if not isinstance(payload, dict):
         raise SystemExit("upstream payload must be a JSON object")
