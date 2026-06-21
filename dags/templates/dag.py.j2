@@ -26,6 +26,9 @@ def {{ dag_id }}():
 {%- endfor %}
         ],
 {%- endif %}
+{%- if task.env_vars is defined %}
+        env_vars={{ task.env_vars | tojson }},
+{%- endif %}
         get_logs={{ task.get_logs }},
         is_delete_operator_pod={{ task.is_delete_operator_pod }},
 {%- if task.do_xcom_push is defined %}

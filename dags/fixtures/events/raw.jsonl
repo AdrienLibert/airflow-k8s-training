@@ -1,0 +1,16 @@
+{"event_id": "e001", "ts": "2026-06-20T13:05:12+00:00", "route": "/api/orders", "status": "200", "latency_ms": 42}
+{"event_id": "e002", "ts": "2026-06-20T13:12:44+00:00", "route": "/api/orders", "status": "500", "latency_ms": 310}
+{"event_id": "e003", "ts": "2026-06-20T13:28:01+00:00", "route": "/api/users", "status": "200", "latency_ms": 18}
+{"event_id": "e004", "ts": "2026-06-20T13:45:30+00:00", "route": "/api/orders", "status": "200", "latency_ms": 55}
+{"event_id": "e005", "ts": "2026-06-20T13:59:59+00:00", "route": "/api/health", "status": "200", "latency_ms": 3}
+{"event_id": "e006", "ts": "2026-06-20T14:01:10+00:00", "route": "/api/orders", "status": "200", "latency_ms": 47}
+{"event_id": "e007", "ts": "2026-06-20T14:08:22+00:00", "route": "/api/users", "status": "404", "latency_ms": 12}
+{"event_id": "e008", "ts": "2026-06-20T14:15:33+00:00", "route": "/api/orders", "status": "200", "latency_ms": 61}
+{"event_id": "e009", "ts": "2026-06-20T14:22:18+00:00", "route": "/api/orders", "status": "500", "latency_ms": 280}
+{"event_id": "e010", "ts": "2026-06-20T14:30:00+00:00", "route": "/api/users", "status": "200", "latency_ms": 21}
+{"event_id": "e011", "ts": "2026-06-20T14:44:55+00:00", "route": "/api/health", "status": "200", "latency_ms": 2}
+{"event_id": "e012", "ts": "2026-06-20T14:58:40+00:00", "route": "/api/orders", "status": "200", "latency_ms": 39}
+{"event_id": "e013", "ts": "2026-06-20T15:03:11+00:00", "route": "/api/orders", "status": "200", "latency_ms": 44}
+{"event_id": "e014", "ts": "2026-06-20T15:17:27+00:00", "route": "/api/users", "status": "200", "latency_ms": 16}
+{"event_id": "e015", "ts": "2026-06-20T15:42:09+00:00", "route": "/api/orders", "status": "503", "latency_ms": 900}
+{"event_id": "e016", "ts": "2026-06-20T14:08:22+00:00", "route": "/api/users", "status": "404", "latency_ms": 12}

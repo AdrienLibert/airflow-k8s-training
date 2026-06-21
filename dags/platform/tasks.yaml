@@ -9,3 +9,33 @@ tasks:
     arguments:
       - "{{ ti.xcom_pull(task_ids='get_hello') }}"
       - "{{ ti.xcom_pull(task_ids='get_world') }}"
+
+  preflight:
+    env_vars: &metrics_env
+      EVENTS_SOURCE: /app/fixtures/events/raw.jsonl
+      METRICS_OUTPUT_DIR: /tmp/metrics/hourly
+      DATA_INTERVAL_START: "{{ data_interval_start.isoformat() }}"
+
+  extract_hourly:
+    env_vars:
+      <<: *metrics_env
+
+  normalize:
+    env_vars:
+      <<: *metrics_env
+
+  aggregate:
+    env_vars:
+      <<: *metrics_env
+
+  write_summary:
+    env_vars:
+      <<: *metrics_env
+
+  verify:
+    env_vars:
+      <<: *metrics_env
+
+  notify_summary:
+    env_vars:
+      <<: *metrics_env

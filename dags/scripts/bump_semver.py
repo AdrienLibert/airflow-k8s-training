@@ -52,7 +52,7 @@ def format_semver(version: tuple[int, int, int]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compute next semver from Docker image tags")
     parser.add_argument("level", choices=["patch", "minor", "major"])
-    parser.add_argument("--image-name", default="hello-world-tasks")
+    parser.add_argument("--image-name", default="airflow-k8s-tasks")
     args = parser.parse_args()
 
     tags = list_tags(args.image_name)

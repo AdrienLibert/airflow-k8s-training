@@ -1,0 +1,34 @@
+metrics_hourly:
+  schedule: "@hourly"
+  start_date: 2026-06-20
+  catchup: false
+  tags:
+    - metrics
+    - hourly
+
+  tasks:
+    - task_id: preflight
+
+    - task_id: extract_hourly
+      dependencies:
+        - preflight
+
+    - task_id: normalize
+      dependencies:
+        - extract_hourly
+
+    - task_id: aggregate
+      dependencies:
+        - normalize
+
+    - task_id: write_summary
+      dependencies:
+        - aggregate
+
+    - task_id: verify
+      dependencies:
+        - write_summary
+
+    - task_id: notify_summary
+      dependencies:
+        - verify

@@ -15,7 +15,7 @@ esac
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-IMAGE_NAME="${IMAGE_NAME:-hello-world-tasks}"
+IMAGE_NAME="${IMAGE_NAME:-airflow-k8s-tasks}"
 
 PYTHON="$REPO_ROOT/.venv/bin/python"
 if [[ ! -x "$PYTHON" ]]; then

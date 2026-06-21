@@ -153,6 +153,8 @@ def build_render_tasks(
             item["do_xcom_push"] = entry["do_xcom_push"]
         if "arguments" in entry:
             item["arguments"] = entry["arguments"]
+        if "env_vars" in entry:
+            item["env_vars"] = entry["env_vars"]
         if task.dependencies:
             item["dependencies"] = list(task.dependencies)
         prepared.append(item)

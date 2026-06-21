@@ -23,7 +23,7 @@ python3 -m venv .venv
 
 ## Image versioning
 
-Task image tags are **not stored in the repo**. Docker Desktop's image store is the source of truth (`docker images hello-world-tasks`).
+Task image tags are **not stored in the repo**. Docker Desktop's image store is the source of truth (`docker images airflow-k8s-tasks`).
 
 ```bash
 ./dags/push-task-image.sh patch              # 0.0.1 → 0.0.2
@@ -35,7 +35,7 @@ Task image tags are **not stored in the repo**. Docker Desktop's image store is 
 Publish an existing tag without rebuilding:
 
 ```bash
-./dags/publish-dags.sh --tag 0.0.1 --image-name hello-world-tasks
+./dags/publish-dags.sh --tag 0.0.1 --image-name airflow-k8s-tasks
 ```
 ## Runtime
 
@@ -45,12 +45,12 @@ sequenceDiagram
     participant Sched as Scheduler
     participant Worker as Worker
     participant KPO as KubernetesPodOperator
-    participant Pod as hello-world-tasks pod
+    participant Pod as airflow-k8s-tasks pod
 
     UI->>Sched: trigger DAG
     Sched->>Worker: queue tasks
     Worker->>KPO: run get_hello / get_world
-    KPO->>Pod: start pod with hello-world-tasks:0.0.1
+    KPO->>Pod: start pod with airflow-k8s-tasks:0.0.1
     Pod-->>KPO: stdout → XCom
     KPO->>Pod: start print_message (with XCom args)
     Pod-->>KPO: "Hello World!"
@@ -75,5 +75,5 @@ sequenceDiagram
 
 - Edit YAML in `dags/definitions/*.yaml`
 - Platform config: `dags/platform/`, `dags/schemas/`, `dags/scripts/check_policy.py`
-- `dags/publish-dags.sh --tag <semver> --image-name hello-world-tasks` generates DAG Python and copies it to `/opt/airflow/dags/` on the dag-processor pod
+- `dags/publish-dags.sh --tag <semver> --image-name airflow-k8s-tasks` generates DAG Python and copies it to `/opt/airflow/dags/` on the dag-processor pod
 - The image tag is passed at publish time — it is not committed to the repo
