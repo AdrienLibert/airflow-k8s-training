@@ -30,8 +30,8 @@ done
 [[ -n "$TAG" && -n "$IMAGE_NAME" ]] || usage
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DAGS_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-REPO_ROOT="$(cd "$DAGS_ROOT/.." && pwd)"
+SCRIPTS_DIR="$SCRIPT_DIR/scripts"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 NAMESPACE="${NAMESPACE:-airflow}"
 
 GENERATED="$(mktemp -d)"
@@ -43,7 +43,7 @@ if [[ ! -x "$PYTHON" ]]; then
   PYTHON=python3
 fi
 
-"$PYTHON" "$SCRIPT_DIR/generate_dags.py" \
+"$PYTHON" "$SCRIPTS_DIR/generate_dags.py" \
   --tag "$TAG" \
   --image-name "$IMAGE_NAME" \
   --output-dir "$GENERATED"

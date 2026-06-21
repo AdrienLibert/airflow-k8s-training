@@ -1,7 +1,6 @@
 hello_world_k8s_dag_5:
-  default_args:
-    start_date: 2026-06-10
   schedule: "@daily"
+  start_date: 2026-06-10
   catchup: false
   tags:
     - hello-world
@@ -9,39 +8,10 @@ hello_world_k8s_dag_5:
 
   tasks:
     - task_id: get_hello
-      operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
-      namespace: airflow
-      image: "{{ image }}"
-      image_pull_policy: Never
-      cmds: ["python", "entrypoint.py", "get_hello"]
-      get_logs: true
-      is_delete_operator_pod: true
-      do_xcom_push: true
-      in_cluster: true
 
     - task_id: get_world
-      operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
-      namespace: airflow
-      image: "{{ image }}"
-      image_pull_policy: Never
-      cmds: ["python", "entrypoint.py", "get_world"]
-      get_logs: true
-      is_delete_operator_pod: true
-      do_xcom_push: true
-      in_cluster: true
 
     - task_id: print_message
-      operator: airflow.providers.cncf.kubernetes.operators.pod.KubernetesPodOperator
-      namespace: airflow
-      image: "{{ image }}"
-      image_pull_policy: Never
-      cmds: ["python", "entrypoint.py", "print_message"]
-      arguments:
-        - "{{ ti.xcom_pull(task_ids='get_hello') }}"
-        - "{{ ti.xcom_pull(task_ids='get_world') }}"
-      get_logs: true
-      is_delete_operator_pod: true
-      in_cluster: true
       dependencies:
         - get_hello
         - get_world

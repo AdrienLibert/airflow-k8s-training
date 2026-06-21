@@ -25,10 +25,27 @@ fi
 TAG="$("$PYTHON" "$SCRIPT_DIR/scripts/bump_semver.py" "$BUMP" --image-name "$IMAGE_NAME")"
 IMAGE="${IMAGE_NAME}:${TAG}"
 
+GENERATED="$(mktemp -d)"
+cleanup() { rm -rf "$GENERATED"; }
+trap cleanup EXIT
+
+echo "Validating DAG definitions..."
+"$PYTHON" "$SCRIPT_DIR/scripts/validate.py"
+
+echo "Checking DAG generation for ${IMAGE}..."
+"$PYTHON" "$SCRIPT_DIR/scripts/generate_dags.py" \
+  --tag "$TAG" \
+  --image-name "$IMAGE_NAME" \
+  --output-dir "$GENERATED"
+shopt -s nullglob
+py_files=("$GENERATED"/*.py)
+shopt -u nullglob
+[[ ${#py_files[@]} -gt 0 ]] || { echo "ERROR: generator produced no DAG files" >&2; exit 1; }
+"$PYTHON" -m py_compile "${py_files[@]}"
+
 echo "Building ${IMAGE}..."
 docker build -t "$IMAGE" "$SCRIPT_DIR"
 
-# Docker Desktop: cluster nodes don't see host docker images — import into each node.
 mapfile -t NODES < <(
   docker ps --format '{{.Names}}' | grep -E '^(desktop-(worker|control-plane)|kind-(worker|control-plane))' || true
 )
@@ -43,10 +60,11 @@ fi
 
 echo ""
 echo "Built ${IMAGE} (Docker Desktop image store)"
-echo ""
-echo "Publish with:"
-echo "  ./dags/scripts/publish-dags.sh --tag ${TAG} --image-name ${IMAGE_NAME}"
 
 if [[ "${2:-}" == "--publish" ]]; then
-  "$SCRIPT_DIR/scripts/publish-dags.sh" --tag "$TAG" --image-name "$IMAGE_NAME"
+  "$SCRIPT_DIR/publish-dags.sh" --tag "$TAG" --image-name "$IMAGE_NAME"
+else
+  echo ""
+  echo "Deploy DAGs with:"
+  echo "  ./dags/publish-dags.sh --tag ${TAG} --image-name ${IMAGE_NAME}"
 fi

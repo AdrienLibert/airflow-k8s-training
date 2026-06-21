@@ -1,0 +1,10 @@
+operator:
+  namespace: airflow
+  image_pull_policy: Never
+  get_logs: true
+  is_delete_operator_pod: true
+  in_cluster: true
+
+limits:
+  max_tasks_per_dag: 20
+  max_tags: 10

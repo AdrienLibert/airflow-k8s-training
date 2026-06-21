@@ -35,7 +35,7 @@ Task image tags are **not stored in the repo**. Docker Desktop's image store is 
 Publish an existing tag without rebuilding:
 
 ```bash
-./dags/scripts/publish-dags.sh --tag 0.0.1
+./dags/publish-dags.sh --tag 0.0.1 --image-name hello-world-tasks
 ```
 ## Runtime
 
@@ -70,14 +70,10 @@ sequenceDiagram
 - `dags/lib/` — shared task logic
 - `dags/tasks/task_<name>.py` — one file per task, loaded lazily by `entrypoint.py`
 - `dags/entrypoint.py` — `python entrypoint.py <task_name> [args...]` in KubernetesPodOperator
-- `dags/scripts/test_task_imports.py` — checks that loading one task does not run the others
-
-```bash
-python3 dags/scripts/test_task_imports.py
-```
 
 ## DAG authoring
 
 - Edit YAML in `dags/definitions/*.yaml`
-- `dags/scripts/publish-dags.sh --tag <semver>` generates DAG Python in a temp dir at deploy time and copies it to `/opt/airflow/dags/` on the dag-processor pod
+- Platform config: `dags/platform/`, `dags/schemas/`, `dags/scripts/check_policy.py`
+- `dags/publish-dags.sh --tag <semver> --image-name hello-world-tasks` generates DAG Python and copies it to `/opt/airflow/dags/` on the dag-processor pod
 - The image tag is passed at publish time — it is not committed to the repo

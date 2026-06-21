@@ -1,0 +1,11 @@
+tasks:
+  get_hello:
+    do_xcom_push: true
+
+  get_world:
+    do_xcom_push: true
+
+  print_message:
+    arguments:
+      - "{{ ti.xcom_pull(task_ids='get_hello') }}"
+      - "{{ ti.xcom_pull(task_ids='get_world') }}"
