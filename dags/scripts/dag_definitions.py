@@ -17,6 +17,7 @@ SCHEMA_PATH = DAGS_ROOT / "schemas" / "dag-definition.schema.json"
 @dataclass(frozen=True)
 class TaskSpec:
     task_id: str
+    module: str
     dependencies: tuple[str, ...]
 
 
@@ -74,11 +75,14 @@ def parse_definition_file(path: Path) -> DagDefinition:
         task_id = raw_task.get("task_id")
         if not isinstance(task_id, str):
             raise ValueError(f"{path.name}: tasks[{index}].task_id must be a string")
+        module = raw_task.get("module")
+        if not isinstance(module, str):
+            raise ValueError(f"{path.name}: tasks[{index}].module must be a string")
         raw_deps = raw_task.get("dependencies", [])
         if not isinstance(raw_deps, list):
             raise ValueError(f"{path.name}: tasks[{index}].dependencies must be a list")
         dependencies = tuple(str(dep) for dep in raw_deps)
-        tasks.append(TaskSpec(task_id=task_id, dependencies=dependencies))
+        tasks.append(TaskSpec(task_id=task_id, module=module, dependencies=dependencies))
 
     raw_tags = config.get("tags", [])
     if not isinstance(raw_tags, list):
@@ -144,7 +148,7 @@ def build_render_tasks(
             "namespace": operator_defaults["namespace"],
             "image": image,
             "image_pull_policy": operator_defaults["image_pull_policy"],
-            "cmds": ["python", "entrypoint.py", task.task_id],
+            "cmds": ["python", "entrypoint.py", f"{task.module}.py", task.task_id],
             "get_logs": operator_defaults["get_logs"],
             "is_delete_operator_pod": operator_defaults["is_delete_operator_pod"],
             "in_cluster": operator_defaults["in_cluster"],

@@ -8,10 +8,13 @@ hello_world_k8s_dag_9:
 
   tasks:
     - task_id: get_hello
+      module: hello_pipeline
 
     - task_id: get_world
+      module: hello_pipeline
 
     - task_id: print_message
+      module: hello_pipeline
       dependencies:
         - get_hello
         - get_world

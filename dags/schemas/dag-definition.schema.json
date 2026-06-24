@@ -46,10 +46,14 @@
     },
     "task": {
       "type": "object",
-      "required": ["task_id"],
+      "required": ["task_id", "module"],
       "additionalProperties": false,
       "properties": {
         "task_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "module": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9_]*$"
         },

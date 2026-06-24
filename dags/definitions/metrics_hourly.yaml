@@ -8,27 +8,34 @@ metrics_hourly:
 
   tasks:
     - task_id: preflight
+      module: metrics_pipeline
 
     - task_id: extract_hourly
+      module: metrics_pipeline
       dependencies:
         - preflight
 
     - task_id: normalize
+      module: metrics_pipeline
       dependencies:
         - extract_hourly
 
     - task_id: aggregate
+      module: metrics_pipeline
       dependencies:
         - normalize
 
     - task_id: write_summary
+      module: metrics_pipeline
       dependencies:
         - aggregate
 
     - task_id: verify
+      module: metrics_pipeline
       dependencies:
         - write_summary
 
     - task_id: notify_summary
+      module: metrics_pipeline
       dependencies:
         - verify

@@ -59,7 +59,7 @@ sequenceDiagram
 ## Redeploy task code
 
 ```bash
-# 1. Edit dags/tasks/task_*.py or dags/lib/*.py
+# 1. Edit dags/tasks/*_pipeline.py or dags/lib/*.py
 
 # 2. Bump semver, build image, publish DAGs
 ./dags/push-task-image.sh patch --publish
@@ -68,12 +68,12 @@ sequenceDiagram
 ## Task layout
 
 - `dags/lib/` — shared task logic
-- `dags/tasks/task_<name>.py` — one file per task, loaded lazily by `entrypoint.py`
-- `dags/entrypoint.py` — `python entrypoint.py <task_name> [args...]` in KubernetesPodOperator
+- `dags/tasks/*_pipeline.py` — domain modules with one function per task
+- `dags/entrypoint.py` — `python entrypoint.py <module.py> <function> [args...]` in KubernetesPodOperator
 
 ## DAG authoring
 
-- Edit YAML in `dags/definitions/*.yaml`
+- Edit YAML in `dags/definitions/*.yaml` (`task_id`, `module`, dependencies)
 - Platform config: `dags/platform/`, `dags/schemas/`, `dags/scripts/check_policy.py`
 - `dags/publish-dags.sh --tag <semver> --image-name airflow-k8s-tasks` generates DAG Python and copies it to `/opt/airflow/dags/` on the dag-processor pod
 - The image tag is passed at publish time — it is not committed to the repo
