@@ -1,6 +1,6 @@
 operator:
   namespace: airflow
-  image_pull_policy: Never
+  image_pull_policy: IfNotPresent
   get_logs: true
   is_delete_operator_pod: true
   in_cluster: true

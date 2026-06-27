@@ -11,8 +11,8 @@ sudo apt install python3-venv   # once, if `python3 -m venv` fails
 python3 -m venv .venv
 .venv/bin/pip install -r dags/scripts/requirements.txt
 
-# 1. Build the Airflow platform image
-./config/build-image.sh
+# 1. Push the Airflow platform image
+./config/push-airflow-image.sh
 
 # 2. Install Airflow via Helm
 ./config/deploy-platform.sh

@@ -34,6 +34,9 @@ SCRIPTS_DIR="$SCRIPT_DIR/scripts"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 NAMESPACE="${NAMESPACE:-airflow}"
 
+# shellcheck source=../config/registry.sh
+source "$REPO_ROOT/config/registry.sh"
+
 GENERATED="$(mktemp -d)"
 cleanup() { rm -rf "$GENERATED"; }
 trap cleanup EXIT
@@ -43,7 +46,10 @@ if [[ ! -x "$PYTHON" ]]; then
   PYTHON=python3
 fi
 
+FULL_IMAGE="$(task_image_ref "$TAG")"
+
 "$PYTHON" "$SCRIPTS_DIR/generate_dags.py" \
+  --image "$FULL_IMAGE" \
   --tag "$TAG" \
   --image-name "$IMAGE_NAME" \
   --output-dir "$GENERATED"

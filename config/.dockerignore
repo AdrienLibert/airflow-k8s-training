@@ -2,4 +2,4 @@
 .gitignore
 values.yaml
 deploy-*.sh
-build-image.sh
+push-airflow-image.sh
