@@ -48,8 +48,12 @@ shopt -u nullglob
 echo "Building ${FULL_IMAGE}..."
 docker build -t "$FULL_IMAGE" "$SCRIPT_DIR"
 
-echo "Pushing ${FULL_IMAGE}..."
-docker push "$FULL_IMAGE"
+if should_push_images; then
+  echo "Pushing ${FULL_IMAGE}..."
+  docker push "$FULL_IMAGE"
+else
+  echo "Skipping push (${DEPLOY_PROFILE} profile — image stays in local Docker store)."
+fi
 
 if [[ "${2:-}" == "--publish" ]]; then
   "$SCRIPT_DIR/publish-dags.sh" --tag "$TAG" --image-name "$IMAGE_NAME"

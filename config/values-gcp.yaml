@@ -1,0 +1,3 @@
+images:
+  airflow:
+    pullPolicy: IfNotPresent

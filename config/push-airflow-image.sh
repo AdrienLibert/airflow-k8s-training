@@ -11,5 +11,9 @@ FULL_IMAGE="$(platform_image_ref "$TAG")"
 echo "Building ${FULL_IMAGE}..."
 docker build -t "$FULL_IMAGE" "$SCRIPT_DIR"
 
-echo "Pushing ${FULL_IMAGE}..."
-docker push "$FULL_IMAGE"
+if should_push_images; then
+  echo "Pushing ${FULL_IMAGE}..."
+  docker push "$FULL_IMAGE"
+else
+  echo "Skipping push (${DEPLOY_PROFILE} profile — image stays in local Docker store)."
+fi

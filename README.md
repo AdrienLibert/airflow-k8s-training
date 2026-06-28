@@ -1,8 +1,21 @@
-# Airflow on Kubernetes (local)
+# Airflow on Kubernetes
 
-Requires **Docker Desktop Kubernetes**. Task images are built on the host and read from the Docker Desktop image store — no separate registry container.
+Portable DAG/task code with profile-driven deployment: **local** (Docker Desktop) or **gcp** (Artifact Registry + GKE).
 
-## First-time setup
+## Deploy profiles
+
+| Profile | When | Registry | Push images? |
+|---------|------|----------|--------------|
+| **local** (default) | Omit `DEPLOY_PROFILE` or `DEPLOY_PROFILE=local` | Docker Desktop image store | No |
+| **gcp** | `DEPLOY_PROFILE=gcp` + `GCP_PROJECT` in `config/profiles/gcp.env` | GCP Artifact Registry | Yes |
+
+Config lives in `config/profiles/` — edit `{profile}.env` for the target environment (`local.env` or `gcp.env`).
+
+Helm values: `config/values.yaml` (local defaults). GCP adds `config/values-gcp.yaml` overlay at deploy time.
+
+## Local setup (Docker Desktop)
+
+Requires **Docker Desktop Kubernetes** enabled. Images are built on the host and read from the local Docker store — no remote registry.
 
 ```bash
 # 0. Generator deps (once, on your machine)
@@ -11,7 +24,7 @@ sudo apt install python3-venv   # once, if `python3 -m venv` fails
 python3 -m venv .venv
 .venv/bin/pip install -r dags/scripts/requirements.txt
 
-# 1. Push the Airflow platform image
+# 1. Build the Airflow platform image (local/airflow:3.2.2)
 ./config/push-airflow-image.sh
 
 # 2. Install Airflow via Helm
@@ -21,9 +34,25 @@ python3 -m venv .venv
 ./dags/push-task-image.sh patch --publish
 ```
 
+## GCP setup
+
+```bash
+# Edit config/profiles/gcp.env: set GCP_PROJECT
+
+export DEPLOY_PROFILE=gcp
+
+gcloud auth login
+gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev"
+# kubectl configured for your GKE cluster
+
+./config/push-airflow-image.sh          # build + push platform image
+./config/deploy-platform.sh             # Helm with Artifact Registry repo
+./dags/push-task-image.sh patch --publish
+```
+
 ## Image versioning
 
-Task image tags are **not stored in the repo**. Docker Desktop's image store is the source of truth (`docker images airflow-k8s-tasks`).
+Task image tags are **not stored in the repo**. Locally, Docker Desktop's image store is the source of truth (`docker images airflow-k8s-tasks`).
 
 ```bash
 ./dags/push-task-image.sh patch              # 0.0.1 → 0.0.2
@@ -37,6 +66,7 @@ Publish an existing tag without rebuilding:
 ```bash
 ./dags/publish-dags.sh --tag 0.0.1 --image-name airflow-k8s-tasks
 ```
+
 ## Runtime
 
 ```mermaid
